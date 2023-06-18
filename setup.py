@@ -1,5 +1,7 @@
 from setuptools import setup
 
+from custom_install import CustomInstallCommand
+
 setup(
     # ... other setup configurations ...
 
