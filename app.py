@@ -1,20 +1,28 @@
 import streamlit as st
 from PyPDF2 import PdfReader
+
 from docx import Document
 from io import BytesIO
-import spacy
-import en_core_web_sm
 
-def load_model():
+import spacy
+from spacy.cli import download
+
+def download_model(model_name):
+    if not spacy.util.is_package(model_name):
+        download(model_name)
+    else:
+        st.write(f"Model '{model_name}' is already installed.")
+
+def load_model(model_name):
     try:
-        return en_core_web_sm.load()
+        return spacy.load(model_name)
     except OSError:
-        st.write("Model not found. Downloading...")
-        spacy.cli.download("en_core_web_sm")
-        return en_core_web_sm.load()
+        st.write(f"Model '{model_name}' not found. Downloading...")
+        download_model(model_name)
+        return spacy.load(model_name)
 
 # Load the 'en_core_web_sm' model
-nlp = load_model()
+nlp = load_model("en_core_web_sm")
 
 # Function to extract text from PDF
 def extract_text_from_pdf(file):
