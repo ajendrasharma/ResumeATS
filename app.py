@@ -1,44 +1,35 @@
 import streamlit as st
-
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfReader
 from docx import Document
 from io import BytesIO
-
 import spacy
-from spacy.cli import download
+import en_core_web_sm
 
-def download_model(model_name):
-    if not spacy.util.is_package(model_name):
-        download(model_name)
-    else:
-        st.write(f"Model '{model_name}' is already installed.")
-
-def load_model(model_name):
+def load_model():
     try:
-        return spacy.load(model_name)
+        return en_core_web_sm.load()
     except OSError:
-        st.write(f"Model '{model_name}' not found. Downloading...")
-        download_model(model_name)
-        return spacy.load(model_name)
+        st.write("Model not found. Downloading...")
+        spacy.cli.download("en_core_web_sm")
+        return en_core_web_sm.load()
 
 # Load the 'en_core_web_sm' model
-nlp = load_model("en_core_web_sm")
+nlp = load_model()
 
 # Function to extract text from PDF
 def extract_text_from_pdf(file):
-    file.seek(0)  # Go to the beginning of the file
-    pdf_reader = PdfFileReader(BytesIO(file.read()))
+    pdf_reader = PdfReader(file)
     text = ""
     for page in pdf_reader.pages:
         text += page.extract_text()
     return text
 
-# # Function to extract text from docx
-# def extract_text_from_docx(file):
-#     file.seek(0)  # Go to the beginning of the file
-#     doc = Document(BytesIO(file.read()))
-#     text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
-#     return text
+# Function to extract text from docx
+def extract_text_from_docx(file):
+    file.seek(0)  # Go to the beginning of the file
+    doc = Document(BytesIO(file.read()))
+    text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+    return text
 
 # Function to extract named entities
 def extract_named_entities(text):
@@ -99,8 +90,8 @@ def main():
             # Read and print resume
             if file_details["FileType"] == "application/pdf":
                 resume_text = extract_text_from_pdf(resume_file)
-            # elif file_details["FileType"] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            #     resume_text = extract_text_from_docx(resume_file)
+            elif file_details["FileType"] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                resume_text = extract_text_from_docx(resume_file)
             else:
                 st.write("The file type is not supported. Please upload a pdf or docx file.")
 
@@ -108,11 +99,6 @@ def main():
             st.text(resume_text)
 
         if resume_file is not None:
-            # Read and print resume
-            resume_text = extract_text_from_pdf(resume_file)
-            st.subheader("Resume Text")
-            st.text(resume_text)
-
             # Extract named entities from resume
             st.subheader("Important Keywords in Resume")
             resume_entities = extract_named_entities(resume_text)
